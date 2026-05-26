@@ -5,12 +5,13 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
+from config import SESSION_SECRET
 from services.llm import process_text_input, process_url_input, process_image_input
 from services.scraper import scrape_product_page, is_valid_url
 from prompts.localization import MARKET_NAMES
 
 app = FastAPI(title="Listing Localizer")
-app.add_middleware(SessionMiddleware, secret_key="localizer-secret-change-in-production")
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 templates = Jinja2Templates(directory="templates")
 

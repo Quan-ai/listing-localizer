@@ -1,12 +1,23 @@
 import base64
 import json
 from openai import OpenAI
-from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, TEXT_MODEL, VISION_MODEL
+from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, TEXT_MODEL, VISION_MODEL, LLM_TIMEOUT
 from prompts.localization import EXTRACTION_PROMPT, MARKET_PROMPTS
 
-client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL, timeout=LLM_TIMEOUT)
 
 MARKET_ORDER = ["indonesia", "thailand", "vietnam", "malaysia", "philippines"]
+
+
+def _parse_json_response(content: str) -> dict:
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        content = content.strip()
+        if content.startswith("```"):
+            lines = content.split("\n")
+            content = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+        return json.loads(content)
 
 
 def extract_product_info(text: str) -> dict:
@@ -19,7 +30,7 @@ def extract_product_info(text: str) -> dict:
         response_format={"type": "json_object"},
         temperature=0.3,
     )
-    return json.loads(response.choices[0].message.content)
+    return _parse_json_response(response.choices[0].message.content)
 
 
 def localize_for_market(product_info: dict, market: str) -> dict:
@@ -33,7 +44,7 @@ def localize_for_market(product_info: dict, market: str) -> dict:
         response_format={"type": "json_object"},
         temperature=0.7,
     )
-    return json.loads(response.choices[0].message.content)
+    return _parse_json_response(response.choices[0].message.content)
 
 
 def extract_from_image(image_data: bytes) -> dict:
@@ -59,7 +70,7 @@ def extract_from_image(image_data: bytes) -> dict:
         response_format={"type": "json_object"},
         temperature=0.3,
     )
-    return json.loads(response.choices[0].message.content)
+    return _parse_json_response(response.choices[0].message.content)
 
 
 def _localize_all_markets(product_info: dict) -> dict:
