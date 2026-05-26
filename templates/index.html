@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Listing Localizer</h1>
+    <p class="text-gray-600">One product. Five markets. Localized listings in seconds.</p>
+</div>
+
+<div class="flex gap-0 mb-0" role="tablist">
+    <button class="tab-btn px-4 py-2 rounded-t-lg bg-white border border-b-0 font-medium text-gray-900"
+            onclick="switchTab('text')" id="tab-text" type="button">Paste Text</button>
+    <button class="tab-btn px-4 py-2 rounded-t-lg border border-b-0 text-gray-500"
+            onclick="switchTab('url')" id="tab-url" type="button">Product URL</button>
+    <button class="tab-btn px-4 py-2 rounded-t-lg border border-b-0 text-gray-500"
+            onclick="switchTab('image')" id="tab-image" type="button">Screenshot</button>
+</div>
+
+<form hx-post="/generate" hx-target="#result" hx-indicator="#spinner"
+      hx-encoding="multipart/form-data"
+      class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
+
+    <div id="input-text" class="input-panel">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Product Information</label>
+        <textarea name="text" rows="6" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Paste your product info here...&#10;&#10;Example:&#10;Wireless Bluetooth Earbuds&#10;Noise cancelling, 30hr battery life, IPX5 waterproof&#10;Comes with charging case and 3 sizes of ear tips&#10;Price: $25"></textarea>
+    </div>
+
+    <div id="input-url" class="input-panel hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Shopee / Lazada Product URL</label>
+        <input name="url" type="url" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+               placeholder="https://shopee.co.id/product/123456/..."
+               value="{{ url or '' }}">
+    </div>
+
+    <div id="input-image" class="input-panel hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Product Screenshot</label>
+        <input name="image" type="file" accept="image/*" class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+    </div>
+
+    <input type="hidden" name="input_type" id="input-type" value="text">
+
+    <button type="submit"
+            class="mt-4 w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50"
+            id="submit-btn">
+        Generate Localized Listings
+    </button>
+</form>
+
+<div id="spinner" class="htmx-indicator text-center py-8" style="display:none;">
+    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+    <p class="text-gray-500 mt-2">Generating your localized listings...</p>
+</div>
+
+<div id="result" class="mt-6"></div>
+
+<script>
+function switchTab(type) {
+    document.querySelectorAll('.input-panel').forEach(function(el) { el.classList.add('hidden'); });
+    document.getElementById('input-' + type).classList.remove('hidden');
+    document.getElementById('input-type').value = type;
+    document.querySelectorAll('.tab-btn').forEach(function(el) {
+        el.classList.remove('bg-white', 'font-medium', 'text-gray-900');
+        el.classList.add('text-gray-500');
+    });
+    var btn = document.getElementById('tab-' + type);
+    btn.classList.add('bg-white', 'font-medium', 'text-gray-900');
+    btn.classList.remove('text-gray-500');
+}
+</script>
+
+{% endblock %}
