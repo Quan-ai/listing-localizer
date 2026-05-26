@@ -1,6 +1,6 @@
 import json
 from unittest.mock import patch, MagicMock
-from services.llm import extract_product_info, localize_for_market, process_text_input
+from services.llm import extract_product_info, localize_for_market, process_text_input, extract_from_image, process_image_input
 
 
 class TestExtractProductInfo:
@@ -111,5 +111,87 @@ class TestProcessTextInput:
         with patch("services.llm.client") as mock_client:
             mock_client.chat.completions.create.side_effect = Exception("API Error")
             result = process_text_input("Test product text")
+
+        assert "error" in result
+
+
+class TestExtractFromImage:
+    def test_extracts_structured_json_from_image(self):
+        mock_response = MagicMock()
+        mock_response.choices = [
+            MagicMock(
+                message=MagicMock(
+                    content=json.dumps({
+                        "name": "Test Product",
+                        "category": "Test",
+                        "key_features": ["Feature 1"],
+                        "specs": "",
+                        "price_hint": ""
+                    })
+                )
+            )
+        ]
+
+        with patch("services.llm.client") as mock_client:
+            mock_client.chat.completions.create.return_value = mock_response
+            result = extract_from_image(b"fake-image-data")
+
+        assert result["name"] == "Test Product"
+        assert mock_client.chat.completions.create.call_count == 1
+
+
+class TestProcessImageInput:
+    def test_returns_all_five_markets_from_image(self):
+        mock_extract = MagicMock()
+        mock_extract.choices = [
+            MagicMock(
+                message=MagicMock(
+                    content=json.dumps({
+                        "name": "Test Product",
+                        "category": "Test",
+                        "key_features": ["Feature 1"],
+                        "specs": "",
+                        "price_hint": ""
+                    })
+                )
+            )
+        ]
+
+        mock_localize = MagicMock()
+        mock_localize.choices = [
+            MagicMock(
+                message=MagicMock(
+                    content=json.dumps({
+                        "title": "Localized Title",
+                        "description": "Localized description.",
+                        "keywords": "kw1, kw2, kw3"
+                    })
+                )
+            )
+        ]
+
+        with patch("services.llm.client") as mock_client:
+            mock_client.chat.completions.create.side_effect = [
+                mock_extract,
+                mock_localize,
+                mock_localize,
+                mock_localize,
+                mock_localize,
+                mock_localize,
+            ]
+            result = process_image_input(b"fake-image-data")
+
+        assert "product_info" in result
+        assert len(result["localizations"]) == 5
+        assert "indonesia" in result["localizations"]
+        assert "thailand" in result["localizations"]
+        assert "vietnam" in result["localizations"]
+        assert "malaysia" in result["localizations"]
+        assert "philippines" in result["localizations"]
+
+    def test_returns_error_on_image_extraction_failure(self):
+        with patch("services.llm.client") as mock_client:
+            mock_client.chat.completions.create.side_effect = Exception("API Error")
+            result = process_image_input(b"fake-image-data")
 
         assert "error" in result

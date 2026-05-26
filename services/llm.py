@@ -1,3 +1,4 @@
+import base64
 import json
 from openai import OpenAI
 from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, TEXT_MODEL, VISION_MODEL
@@ -36,8 +37,6 @@ def localize_for_market(product_info: dict, market: str) -> dict:
 
 
 def extract_from_image(image_data: bytes) -> dict:
-    import base64
-
     image_b64 = base64.b64encode(image_data).decode()
     response = client.chat.completions.create(
         model=VISION_MODEL,
@@ -63,20 +62,22 @@ def extract_from_image(image_data: bytes) -> dict:
     return json.loads(response.choices[0].message.content)
 
 
-def process_text_input(text: str) -> dict:
-    try:
-        product_info = extract_product_info(text)
-    except Exception as e:
-        return {"error": f"Failed to extract product info: {str(e)}"}
-
+def _localize_all_markets(product_info: dict) -> dict:
     results = {}
     for market in MARKET_ORDER:
         try:
             results[market] = localize_for_market(product_info, market)
         except Exception as e:
             results[market] = {"error": f"Failed for {market}: {str(e)}"}
+    return results
 
-    return {"product_info": product_info, "localizations": results}
+
+def process_text_input(text: str) -> dict:
+    try:
+        product_info = extract_product_info(text)
+    except Exception as e:
+        return {"error": f"Failed to extract product info: {str(e)}"}
+    return {"product_info": product_info, "localizations": _localize_all_markets(product_info)}
 
 
 def process_url_input(scraped_text: str) -> dict:
@@ -88,12 +89,4 @@ def process_image_input(image_data: bytes) -> dict:
         product_info = extract_from_image(image_data)
     except Exception as e:
         return {"error": f"Failed to extract product info from image: {str(e)}"}
-
-    results = {}
-    for market in MARKET_ORDER:
-        try:
-            results[market] = localize_for_market(product_info, market)
-        except Exception as e:
-            results[market] = {"error": f"Failed for {market}: {str(e)}"}
-
-    return {"product_info": product_info, "localizations": results}
+    return {"product_info": product_info, "localizations": _localize_all_markets(product_info)}
