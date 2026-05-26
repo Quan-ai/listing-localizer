@@ -30,23 +30,22 @@ def scrape_product_page(url: str) -> str:
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
 
         try:
+            page = browser.new_page()
             page.goto(url, wait_until="domcontentloaded", timeout=30000)
             page.wait_for_timeout(3000)
 
             title = page.title()
-            parts = []
-            parts.append(f"Product Title: {title}")
+            parts = [f"Product Title: {title}"]
 
             body = page.query_selector("body")
             if body:
                 full_text = body.inner_text()
                 parts.append(f"Page Content: {full_text[:5000]}")
 
-            browser.close()
             return "\n\n".join(parts)
         except Exception as e:
+            raise RuntimeError(f"Failed to scrape {url}: {str(e)}") from e
+        finally:
             browser.close()
-            raise RuntimeError(f"Failed to scrape {url}: {str(e)}")
