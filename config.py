@@ -18,4 +18,4 @@ STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
 
 if not DEEPSEEK_API_KEY:
-    raise RuntimeError("DEEPSEEK_API_KEY environment variable is required")
+    print("WARNING: DEEPSEEK_API_KEY is not set. LLM features will not work.")
