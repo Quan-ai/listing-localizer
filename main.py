@@ -45,9 +45,16 @@ def _stash_result(key: str, result: dict):
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    import sys
+    print(f"Starting Listing Localizer (Python {sys.version})", flush=True)
     if SESSION_SECRET == "dev-secret-change-in-production":
-        print("WARNING: SESSION_SECRET is using the default value. Set it in your .env for production.")
-    db.init_db()
+        print("WARNING: SESSION_SECRET is using the default value. Set it in your .env for production.", flush=True)
+    try:
+        db.init_db()
+        print("Database initialized successfully.", flush=True)
+    except Exception as e:
+        print(f"ERROR initializing database: {e}", flush=True)
+        raise
     yield
 
 
