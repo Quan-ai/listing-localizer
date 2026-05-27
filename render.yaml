@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: listing-localizer
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && playwright install chromium
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DEEPSEEK_BASE_URL
+        value: https://api.deepseek.com
+      - key: TEXT_MODEL
+        value: deepseek-chat
+      - key: LLM_TIMEOUT
+        value: "60"
+      - key: DAILY_FREE_LIMIT
+        value: "3"
+      - key: LOCAL_UTC_OFFSET
+        value: "8"
+      - key: DATABASE_PATH
+        value: /var/data/localizer.db
