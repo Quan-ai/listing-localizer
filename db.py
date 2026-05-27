@@ -62,6 +62,11 @@ def init_db():
 
         CREATE INDEX IF NOT EXISTS idx_generations_user_ts
             ON generations(user_id, created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS signup_ips (
+            ip      TEXT PRIMARY KEY,
+            count   INTEGER NOT NULL DEFAULT 1
+        );
     """
     )
     conn.commit()
@@ -236,3 +241,22 @@ def db_get_generation_count(user_id: int) -> int:
         "SELECT COUNT(*) as cnt FROM generations WHERE user_id=?", (user_id,)
     ).fetchone()
     return row["cnt"]
+
+
+# ---------- Signup IP tracking ----------
+
+
+def db_check_signup_ip(ip: str, max_allowed: int = 2) -> bool:
+    conn = get_db()
+    row = conn.execute("SELECT count FROM signup_ips WHERE ip=?", (ip,)).fetchone()
+    return (row["count"] if row else 0) < max_allowed
+
+
+def db_record_signup_ip(ip: str):
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO signup_ips(ip, count) VALUES(?, 1) "
+        "ON CONFLICT(ip) DO UPDATE SET count = count + 1",
+        (ip,),
+    )
+    conn.commit()

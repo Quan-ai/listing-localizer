@@ -6,18 +6,15 @@ from fastapi import Request
 
 import db
 
-_SIGNUP_COUNT: dict[str, int] = {}
-_MAX_SIGNUPS = 2
-
 _LOGIN_ATTEMPTS: dict[str, tuple[int, float]] = {}
 _MAX_ATTEMPTS = 5
 _LOCKOUT_SECONDS = 900
 
 def check_signup_rate_limit(ip: str) -> bool:
-    return _SIGNUP_COUNT.get(ip, 0) < _MAX_SIGNUPS
+    return db.db_check_signup_ip(ip)
 
 def record_signup(ip: str):
-    _SIGNUP_COUNT[ip] = _SIGNUP_COUNT.get(ip, 0) + 1
+    db.db_record_signup_ip(ip)
 
 
 def check_login_rate_limit(ip: str) -> bool:
