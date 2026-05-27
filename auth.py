@@ -6,32 +6,18 @@ from fastapi import Request
 
 import db
 
-_SIGNUP_COUNT: dict[str, tuple[int, float]] = {}
+_SIGNUP_COUNT: dict[str, int] = {}
 _MAX_SIGNUPS = 2
-_SIGNUP_WINDOW = 86400  # 24 hours
 
 _LOGIN_ATTEMPTS: dict[str, tuple[int, float]] = {}
 _MAX_ATTEMPTS = 5
 _LOCKOUT_SECONDS = 900
 
 def check_signup_rate_limit(ip: str) -> bool:
-    now = time.time()
-    entry = _SIGNUP_COUNT.get(ip)
-    if entry is None:
-        return True
-    count, first = entry
-    if now - first > _SIGNUP_WINDOW:
-        _SIGNUP_COUNT.pop(ip, None)
-        return True
-    return count < _MAX_SIGNUPS
+    return _SIGNUP_COUNT.get(ip, 0) < _MAX_SIGNUPS
 
 def record_signup(ip: str):
-    now = time.time()
-    entry = _SIGNUP_COUNT.get(ip)
-    if entry is None or now - entry[1] > _SIGNUP_WINDOW:
-        _SIGNUP_COUNT[ip] = (1, now)
-    else:
-        _SIGNUP_COUNT[ip] = (entry[0] + 1, entry[1])
+    _SIGNUP_COUNT[ip] = _SIGNUP_COUNT.get(ip, 0) + 1
 
 
 def check_login_rate_limit(ip: str) -> bool:
