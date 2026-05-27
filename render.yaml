@@ -20,7 +20,9 @@ services:
         value: "3"
       - key: LOCAL_UTC_OFFSET
         value: "8"
-      - key: DATABASE_PATH
-        value: data/localizer.db
+      - key: TURSO_URL
+        sync: false
+      - key: TURSO_AUTH_TOKEN
+        sync: false
       - key: PYTHON_VERSION
         value: "3.12"

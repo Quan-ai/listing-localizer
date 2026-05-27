@@ -3,31 +3,40 @@ import os
 import sqlite3
 import threading
 
-from config import DAILY_FREE_LIMIT, DATABASE_PATH
+from config import DAILY_FREE_LIMIT, DATABASE_PATH, TURSO_URL, TURSO_AUTH_TOKEN
 
+_use_turso = bool(TURSO_URL and TURSO_AUTH_TOKEN)
 _local = threading.local()
 
 
-def get_db() -> sqlite3.Connection:
-    """Return thread-local database connection with WAL mode."""
+def get_db():
     conn = getattr(_local, "conn", None)
-    if conn is None:
-        os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-        conn = sqlite3.connect(DATABASE_PATH)
-        conn.execute("PRAGMA journal_mode=WAL")
+    if conn is not None:
+        return conn
+
+    if _use_turso:
+        import libsql_experimental as libsql
+        conn = libsql.connect("localizer", sync_url=TURSO_URL, auth_token=TURSO_AUTH_TOKEN)
         conn.execute("PRAGMA foreign_keys=ON")
         conn.row_factory = sqlite3.Row
         _local.conn = conn
+        return conn
+
+    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    conn.row_factory = sqlite3.Row
+    _local.conn = conn
     return conn
 
 
 def init_db():
-    """Create tables and indexes. Safe to call multiple times."""
-    os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+    if not _use_turso:
+        os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
     conn = get_db()
-    conn.executescript(
-        """
-        CREATE TABLE IF NOT EXISTS users (
+    statements = [
+        """CREATE TABLE IF NOT EXISTS users (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             email           TEXT UNIQUE NOT NULL,
             password_hash   TEXT NOT NULL,
@@ -35,20 +44,16 @@ def init_db():
             stripe_customer_id       TEXT,
             stripe_subscription_id   TEXT,
             created_at      TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS daily_usage (
+        )""",
+        """CREATE TABLE IF NOT EXISTS daily_usage (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id   INTEGER NOT NULL REFERENCES users(id),
             date      TEXT NOT NULL,
             count     INTEGER NOT NULL DEFAULT 0,
             UNIQUE(user_id, date)
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_usage_user_date
-            ON daily_usage(user_id, date);
-
-        CREATE TABLE IF NOT EXISTS generations (
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_usage_user_date ON daily_usage(user_id, date)",
+        """CREATE TABLE IF NOT EXISTS generations (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id       INTEGER NOT NULL REFERENCES users(id),
             input_type    TEXT NOT NULL,
@@ -58,17 +63,15 @@ def init_db():
             markets       TEXT NOT NULL,
             result_json   TEXT NOT NULL,
             created_at    TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_generations_user_ts
-            ON generations(user_id, created_at DESC);
-
-        CREATE TABLE IF NOT EXISTS signup_ips (
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_generations_user_ts ON generations(user_id, created_at DESC)",
+        """CREATE TABLE IF NOT EXISTS signup_ips (
             ip      TEXT PRIMARY KEY,
             count   INTEGER NOT NULL DEFAULT 1
-        );
-    """
-    )
+        )""",
+    ]
+    for stmt in statements:
+        conn.execute(stmt)
     conn.commit()
 
 
@@ -137,13 +140,15 @@ def _local_today() -> str:
 def check_and_increment_daily_usage(
     user_id: int, is_pro: bool
 ) -> tuple[bool, int, int]:
-    """Returns (allowed: bool, used: int, limit: int). Increments count if allowed."""
     if is_pro:
         return (True, 0, 999_999)
 
     today = _local_today()
     conn = get_db()
-    conn.execute("BEGIN IMMEDIATE")
+    if not _use_turso:
+        conn.execute("BEGIN IMMEDIATE")
+    else:
+        conn.execute("BEGIN")
     row = conn.execute(
         "SELECT count FROM daily_usage WHERE user_id=? AND date=?",
         (user_id, today),
@@ -165,7 +170,6 @@ def check_and_increment_daily_usage(
 
 
 def get_todays_usage(user_id: int, is_pro: bool) -> tuple[int, int]:
-    """Returns (used: int, limit: int) without incrementing."""
     if is_pro:
         return (0, 999_999)
 

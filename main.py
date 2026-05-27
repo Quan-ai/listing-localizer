@@ -59,7 +59,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Listing Localizer", lifespan=lifespan)
-app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, max_age=30 * 24 * 60 * 60, https_only=True)
 
 templates = Jinja2Templates(directory="templates")
 templates.env.globals["t"] = translate
