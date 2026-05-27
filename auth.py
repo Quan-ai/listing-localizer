@@ -7,7 +7,7 @@ from fastapi import Request
 import db
 
 _SIGNUP_COUNT: dict[str, tuple[int, float]] = {}
-_MAX_SIGNUPS = 3
+_MAX_SIGNUPS = 2
 _SIGNUP_WINDOW = 86400  # 24 hours
 
 _LOGIN_ATTEMPTS: dict[str, tuple[int, float]] = {}
