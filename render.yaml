@@ -21,4 +21,6 @@ services:
       - key: LOCAL_UTC_OFFSET
         value: "8"
       - key: DATABASE_PATH
-        value: /var/data/localizer.db
+        value: data/localizer.db
+      - key: PYTHON_VERSION
+        value: "3.12"
