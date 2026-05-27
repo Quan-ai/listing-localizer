@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">{{ t('upgrade_heading', lang) }}</h1>
+
+<div class="max-w-lg mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="text-center mb-6">
+            <span class="text-3xl font-bold text-gray-900">$9</span>
+            <span class="text-gray-500">{{ t('upgrade_price', lang) }}</span>
+        </div>
+
+        <ul class="space-y-3 mb-6">
+            <li class="flex items-center gap-2 text-sm text-gray-700">
+                <span class="text-green-500 font-bold">+</span> {{ t('upgrade_feature_1', lang) }}
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-700">
+                <span class="text-green-500 font-bold">+</span> {{ t('upgrade_feature_2', lang) }}
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-700">
+                <span class="text-green-500 font-bold">+</span> {{ t('upgrade_feature_3', lang) }}
+            </li>
+            <li class="flex items-center gap-2 text-sm text-gray-700">
+                <span class="text-green-500 font-bold">+</span> {{ t('upgrade_feature_4', lang) }}
+            </li>
+        </ul>
+
+        <div class="border-t border-gray-200 pt-6">
+            <p class="text-center text-sm text-gray-600 mb-5">
+                {{ t('upgrade_contact', lang) }}
+            </p>
+
+            <div class="flex gap-4 justify-center">
+                <a href="https://wa.me/qr/VXCFZA3Q4WRTA1" target="_blank"
+                   class="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 transition group flex-1">
+                    <img src="/static/whatsapp-qr.png" alt="WhatsApp QR" class="h-72 w-auto rounded object-contain">
+                    <span class="text-sm font-medium text-gray-700 group-hover:text-green-700">WhatsApp</span>
+                </a>
+
+                <a href="https://t.me/+60166077182" target="_blank"
+                   class="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition group flex-1">
+                    <img src="/static/telegram-qr.jpg" alt="Telegram QR" class="h-72 w-auto rounded object-contain">
+                    <span class="text-sm font-medium text-gray-700 group-hover:text-blue-700">Telegram</span>
+                </a>
+            </div>
+
+            <p class="text-center text-xs text-gray-400 mt-4">
+                {{ t('upgrade_scan_hint', lang) }}
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

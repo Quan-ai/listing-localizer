@@ -94,3 +94,31 @@ MARKET_NAMES = {
     "malaysia": "Malaysia (Malay)",
     "philippines": "Philippines (Taglish)",
 }
+
+STYLE_OPTIONS = {
+    "balanced": "Balanced",
+    "promotional": "Promotional",
+    "premium": "Premium",
+    "trending": "Trending",
+    "minimal": "Minimal",
+}
+
+STYLE_MODIFIERS = {
+    "balanced": "Use a natural, all-purpose e-commerce tone. Balance selling points with factual information.",
+    "promotional": "Use a high-energy promotional tone. Emphasize discounts, limited-time deals, urgency, and irresistible offers. Create strong FOMO and buying impulse.",
+    "premium": "Use a refined, trust-building tone. Emphasize quality, authenticity, brand reputation, certifications, and why this product is worth the price.",
+    "trending": "Use a viral, social-media-driven tone. Emphasize that this product is trending, everyone is buying it, and it is recommended by influencers. Use hype language.",
+    "minimal": "Use an ultra-clean, minimal tone. Short sentences only. No hype, no fluff — just key facts and one clear call to action. Scannable and direct.",
+}
+
+
+def get_style_instruction(style: str, discount: int | None = None) -> str:
+    instruction = STYLE_MODIFIERS.get(style, STYLE_MODIFIERS["balanced"])
+    if style == "promotional" and discount:
+        instruction += (
+            f" The product is currently on sale at {discount}% off. "
+            f"Mention the specific {discount}% discount in the title and description. "
+            f"Reference the original price and the sale price. "
+            f"Make the discount feel like an unmissable deal."
+        )
+    return instruction

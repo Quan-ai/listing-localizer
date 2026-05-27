@@ -10,5 +10,12 @@ VISION_MODEL = os.getenv("VISION_MODEL", "deepseek-chat")
 SESSION_SECRET = os.getenv("SESSION_SECRET", "dev-secret-change-in-production")
 LLM_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "60"))
 
+DATABASE_PATH = os.environ.get("DATABASE_PATH", "data/localizer.db")
+DAILY_FREE_LIMIT = int(os.environ.get("DAILY_FREE_LIMIT", "3"))
+LOCAL_UTC_OFFSET = int(os.environ.get("LOCAL_UTC_OFFSET", "8"))
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
 if not DEEPSEEK_API_KEY:
     raise RuntimeError("DEEPSEEK_API_KEY environment variable is required")

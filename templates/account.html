@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-gray-900 mb-6">{{ t('account_heading', lang) }}</h1>
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-6">
+    <div>
+        <h2 class="text-lg font-semibold text-gray-900">{{ t('account_plan', lang) }}</h2>
+        {% if user.is_pro %}
+        <div class="flex items-center gap-2 mt-2">
+            <span class="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">{{ t('pro_badge', lang) }}</span>
+            <span class="text-gray-700">{{ t('usage_pro', lang) }}</span>
+        </div>
+        {% else %}
+        <p class="text-gray-700 mt-2">{{ t('account_free_plan', lang, limit=limit) }}</p>
+        <a href="/upgrade"
+           class="mt-3 inline-block px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm font-medium">
+            {{ t('account_upgrade_btn', lang) }}
+        </a>
+        {% endif %}
+    </div>
+
+    <div class="border-t border-gray-200 pt-6">
+        <h2 class="text-lg font-semibold text-gray-900">{{ t('account_today_usage', lang) }}</h2>
+        <div class="mt-2 flex items-center gap-3">
+            <div class="w-48 h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full {{ 'bg-yellow-400' if ratio >= 0.8 else 'bg-blue-500' }} rounded-full"
+                     style="width: {{ ratio * 100 }}%"></div>
+            </div>
+            <span class="text-sm text-gray-600">{{ used }} / {{ display_limit }}</span>
+        </div>
+    </div>
+
+    <div class="border-t border-gray-200 pt-6">
+        <h2 class="text-lg font-semibold text-gray-900">{{ t('account_total_generations', lang) }}</h2>
+        <p class="text-gray-700 mt-2">{{ total_generations }}</p>
+    </div>
+
+    <div class="border-t border-gray-200 pt-6">
+        <p class="text-sm text-gray-500">{{ t('account_member_since', lang) }} {{ user.created_at[:10] }}</p>
+    </div>
+</div>
+
+{% endblock %}

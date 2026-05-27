@@ -26,17 +26,37 @@ class TestIsValidUrl:
         assert is_valid_url("") is False
 
 
-class TestScrapeProductPage:
+class TestShopeeUrlExtraction:
+    def test_extracts_product_name_from_url_slug(self):
+        url = "https://shopee.com.my/1000ml-304-Stainless-Steel-Bottle-Thermos-Vacuum-Flask-1L-i.1049127897.56755148679"
+        result = scrape_product_page(url)
+        assert "1000ml 304 Stainless Steel Bottle Thermos Vacuum Flask 1L" in result
+
+    def test_extracts_short_slug(self):
+        url = "https://shopee.ph/Wireless-Earbuds-Bluetooth-5-3-i.123456.789012"
+        result = scrape_product_page(url)
+        assert "Wireless Earbuds Bluetooth 5 3" in result
+
+    def test_raises_on_empty_slug(self):
+        url = "https://shopee.co.id/-i.123.456"
+        with __import__("pytest").raises(ValueError):
+            scrape_product_page(url)
+
+
+class TestLazadaScrape:
     def test_extracts_title_and_description(self):
         mock_page = MagicMock()
-        mock_page.title.return_value = "Test Product Title | Shopee"
+        mock_page.title.return_value = "Test Product Title | Lazada"
         mock_page.query_selector.return_value = None
+
+        mock_context = MagicMock()
+        mock_context.new_page.return_value = mock_page
 
         with patch("services.scraper.sync_playwright") as mock_playwright:
             mock_browser = MagicMock()
+            mock_browser.new_context.return_value = mock_context
             mock_playwright.return_value.__enter__.return_value.chromium.launch.return_value = mock_browser
-            mock_browser.new_page.return_value = mock_page
 
-            result = scrape_product_page("https://shopee.co.id/product/123")
+            result = scrape_product_page("https://www.lazada.com.my/products/test-product")
 
         assert "Test Product Title" in result

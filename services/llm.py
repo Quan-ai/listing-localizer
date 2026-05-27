@@ -1,8 +1,14 @@
-import base64
+import io
 import json
 from openai import OpenAI
-from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, TEXT_MODEL, VISION_MODEL, LLM_TIMEOUT
-from prompts.localization import EXTRACTION_PROMPT, MARKET_PROMPTS
+from PIL import Image
+import pytesseract
+from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, TEXT_MODEL, LLM_TIMEOUT
+from prompts.localization import EXTRACTION_PROMPT, MARKET_PROMPTS, get_style_instruction
+
+_TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+if __import__("os").path.exists(_TESSERACT_PATH):
+    pytesseract.pytesseract.tesseract_cmd = _TESSERACT_PATH
 
 client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL, timeout=LLM_TIMEOUT)
 
@@ -33,8 +39,10 @@ def extract_product_info(text: str) -> dict:
     return _parse_json_response(response.choices[0].message.content)
 
 
-def localize_for_market(product_info: dict, market: str) -> dict:
-    prompt = MARKET_PROMPTS.get(market, MARKET_PROMPTS["indonesia"])
+def localize_for_market(product_info: dict, market: str, style: str = "balanced", discount: int | None = None) -> dict:
+    base_prompt = MARKET_PROMPTS.get(market, MARKET_PROMPTS["indonesia"])
+    style_instruction = get_style_instruction(style, discount)
+    prompt = f"{base_prompt}\n\nTone style: {style_instruction}"
     response = client.chat.completions.create(
         model=TEXT_MODEL,
         messages=[
@@ -48,56 +56,56 @@ def localize_for_market(product_info: dict, market: str) -> dict:
 
 
 def extract_from_image(image_data: bytes) -> dict:
-    image_b64 = base64.b64encode(image_data).decode()
-    response = client.chat.completions.create(
-        model=VISION_MODEL,
-        messages=[
-            {"role": "system", "content": EXTRACTION_PROMPT},
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "Extract product information from this image.",
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"},
-                    },
-                ],
-            },
-        ],
-        response_format={"type": "json_object"},
-        temperature=0.3,
-    )
-    return _parse_json_response(response.choices[0].message.content)
+    try:
+        pytesseract.get_tesseract_version()
+    except pytesseract.TesseractNotFoundError:
+        raise RuntimeError(
+            "Tesseract OCR is not installed. Install it from "
+            "https://github.com/UB-Mannheim/tesseract/wiki "
+            "or run: winget install UB-Mannheim.Tesseract"
+        )
+
+    image = Image.open(io.BytesIO(image_data))
+    ocr_text = pytesseract.image_to_string(image).strip()
+    if not ocr_text:
+        raise RuntimeError(
+            "No text could be extracted from the image. "
+            "Ensure the screenshot contains readable product text, "
+            "or use Text / URL input instead."
+        )
+    return extract_product_info(ocr_text[:4000])
 
 
-def _localize_all_markets(product_info: dict) -> dict:
+def _localize_all_markets(product_info: dict, style: str = "balanced", discount: int | None = None, markets: list[str] | None = None) -> dict:
+    target_markets = markets if markets else MARKET_ORDER
     results = {}
-    for market in MARKET_ORDER:
+    for market in target_markets:
         try:
-            results[market] = localize_for_market(product_info, market)
+            results[market] = localize_for_market(product_info, market, style, discount)
         except Exception as e:
             results[market] = {"error": f"Failed for {market}: {str(e)}"}
     return results
 
 
-def process_text_input(text: str) -> dict:
+def process_text_input(text: str, style: str = "balanced", discount: int | None = None, markets: list[str] | None = None) -> dict:
     try:
         product_info = extract_product_info(text)
     except Exception as e:
         return {"error": f"Failed to extract product info: {str(e)}"}
-    return {"product_info": product_info, "localizations": _localize_all_markets(product_info)}
+    return {"product_info": product_info, "localizations": _localize_all_markets(product_info, style, discount, markets)}
 
 
-def process_url_input(scraped_text: str) -> dict:
-    return process_text_input(scraped_text)
+def process_url_input(scraped_text: str, style: str = "balanced", discount: int | None = None, markets: list[str] | None = None) -> dict:
+    return process_text_input(scraped_text, style, discount, markets)
 
 
-def process_image_input(image_data: bytes) -> dict:
+def process_image_input(image_data: bytes, style: str = "balanced", discount: int | None = None, markets: list[str] | None = None) -> dict:
     try:
         product_info = extract_from_image(image_data)
     except Exception as e:
         return {"error": f"Failed to extract product info from image: {str(e)}"}
-    return {"product_info": product_info, "localizations": _localize_all_markets(product_info)}
+    return {"product_info": product_info, "localizations": _localize_all_markets(product_info, style, discount, markets)}
+
+
+def regenerate_localizations(product_info: dict, style: str, discount: int | None = None, markets: list[str] | None = None) -> dict:
+    return {"product_info": product_info, "localizations": _localize_all_markets(product_info, style, discount, markets)}

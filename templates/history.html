@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="text-2xl font-bold text-gray-900 mb-6">{{ t('history_heading', lang) }}</h1>
+
+{% if generations %}
+<div class="space-y-3">
+    {% for gen in generations %}
+    <a href="/history/{{ gen.id }}"
+       class="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:border-blue-300 transition">
+        <div class="flex justify-between items-start">
+            <div>
+                <p class="font-medium text-gray-900">{{ gen.input_summary or t('history_untitled', lang) }}</p>
+                <p class="text-sm text-gray-500 mt-1">
+                    {{ gen.input_type }} &middot; {{ gen.style }} &middot; {{ gen.created_at }}
+                </p>
+            </div>
+            <span class="text-blue-600 text-sm font-medium">{{ t('history_view', lang) }}</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+{% if has_more %}
+<div class="text-center mt-6">
+    <a href="/history?offset={{ next_offset }}"
+       class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+        {{ t('history_load_more', lang) }}
+    </a>
+</div>
+{% endif %}
+
+{% else %}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+    <p class="text-gray-500">{{ t('history_empty', lang) }}</p>
+    <a href="/" class="mt-4 inline-block text-blue-600 hover:underline font-medium text-sm">{{ t('history_generate_first', lang) }}</a>
+</div>
+{% endif %}
+
+{% endblock %}

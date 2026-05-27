@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-md mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 mb-6 text-center">{{ t('login_heading', lang) }}</h1>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm mb-4">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/login" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('login_email_label', lang) }}</label>
+        <input name="email" type="email" required
+               class="w-full border border-gray-300 rounded-lg p-2 mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+               placeholder="{{ t('login_email_placeholder', lang) }}">
+
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ t('login_password_label', lang) }}</label>
+        <input name="password" type="password" required
+               class="w-full border border-gray-300 rounded-lg p-2 mb-6 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+
+        <button type="submit"
+                class="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition">
+            {{ t('login_btn', lang) }}
+        </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-600 mt-4">
+        {{ t('login_no_account', lang) }} <a href="/signup" class="text-blue-600 hover:underline">{{ t('login_signup_link', lang) }}</a>
+    </p>
+</div>
+
+{% endblock %}

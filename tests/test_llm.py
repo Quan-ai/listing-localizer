@@ -116,7 +116,7 @@ class TestProcessTextInput:
 
 
 class TestExtractFromImage:
-    def test_extracts_structured_json_from_image(self):
+    def test_extracts_text_via_ocr_then_llm(self):
         mock_response = MagicMock()
         mock_response.choices = [
             MagicMock(
@@ -132,12 +132,26 @@ class TestExtractFromImage:
             )
         ]
 
-        with patch("services.llm.client") as mock_client:
+        with patch("services.llm.client") as mock_client, \
+             patch("services.llm.pytesseract.image_to_string") as mock_ocr, \
+             patch("services.llm.pytesseract.get_tesseract_version") as mock_version, \
+             patch("services.llm.Image.open") as mock_image:
+            mock_ocr.return_value = "Product title: Test Product\nPrice: $10"
             mock_client.chat.completions.create.return_value = mock_response
             result = extract_from_image(b"fake-image-data")
 
         assert result["name"] == "Test Product"
+        mock_ocr.assert_called_once()
         assert mock_client.chat.completions.create.call_count == 1
+
+    def test_raises_on_empty_ocr_result(self):
+        with patch("services.llm.pytesseract.image_to_string") as mock_ocr, \
+             patch("services.llm.pytesseract.get_tesseract_version") as mock_version, \
+             patch("services.llm.Image.open") as mock_image:
+            mock_ocr.return_value = "   "
+
+            with __import__("pytest").raises(RuntimeError, match="No text could be extracted"):
+                extract_from_image(b"fake-blank-image-data")
 
 
 class TestProcessImageInput:
@@ -170,7 +184,11 @@ class TestProcessImageInput:
             )
         ]
 
-        with patch("services.llm.client") as mock_client:
+        with patch("services.llm.client") as mock_client, \
+             patch("services.llm.pytesseract.image_to_string") as mock_ocr, \
+             patch("services.llm.pytesseract.get_tesseract_version") as mock_version, \
+             patch("services.llm.Image.open") as mock_image:
+            mock_ocr.return_value = "Product title: Test Product"
             mock_client.chat.completions.create.side_effect = [
                 mock_extract,
                 mock_localize,
@@ -190,8 +208,8 @@ class TestProcessImageInput:
         assert "philippines" in result["localizations"]
 
     def test_returns_error_on_image_extraction_failure(self):
-        with patch("services.llm.client") as mock_client:
-            mock_client.chat.completions.create.side_effect = Exception("API Error")
-            result = process_image_input(b"fake-image-data")
+        with patch("services.llm.Image.open") as mock_image:
+            mock_image.side_effect = Exception("Corrupt image")
+            result = process_image_input(b"corrupt-image-data")
 
         assert "error" in result

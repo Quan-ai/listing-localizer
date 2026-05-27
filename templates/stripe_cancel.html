@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="max-w-md mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ t('stripe_cancel_heading', lang) }}</h1>
+    <p class="text-gray-600 mb-6">{{ t('stripe_cancel_msg', lang) }}</p>
+    <div class="flex gap-3 justify-center">
+        <a href="/upgrade" class="px-6 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600">
+            {{ t('stripe_cancel_try_again', lang) }}
+        </a>
+        <a href="/" class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50">
+            {{ t('stripe_cancel_home', lang) }}
+        </a>
+    </div>
+</div>
+
+{% endblock %}
