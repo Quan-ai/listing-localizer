@@ -134,6 +134,12 @@ async def signup_page(request: Request):
 @app.post("/signup", response_class=HTMLResponse)
 async def signup(request: Request, email: str = Form(...), password: str = Form(...)):
     lang = request.session.get("lang", "en")
+    ip = request.client.host if request.client else "unknown"
+    if not auth.check_signup_rate_limit(ip):
+        return templates.TemplateResponse(request, "signup.html", {
+            "error": translate("err_signup_limit", lang),
+            "user": None,
+        })
     if len(password) < 8:
         return templates.TemplateResponse(request, "signup.html", {
             "error": translate("err_short_password", lang),
@@ -156,6 +162,7 @@ async def signup(request: Request, email: str = Form(...), password: str = Form(
             "error": translate("err_email_registered", lang),
             "user": None,
         })
+    auth.record_signup(ip)
     request.session["user_id"] = user["id"]
     return RedirectResponse("/", status_code=303)
 
@@ -367,9 +374,15 @@ async def regenerate_same(request: Request):
 
 @app.get("/history", response_class=HTMLResponse)
 async def history(request: Request, offset: int = 0):
+    lang = request.session.get("lang", "en")
     user = await auth.get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
+    if not user["is_pro"]:
+        return templates.TemplateResponse(request, "upgrade.html", {
+            "user": user,
+            "has_stripe": bool(STRIPE_SECRET_KEY),
+        })
 
     limit = 20
     generations = await asyncio.to_thread(db.db_get_generations, user["id"], limit + 1, offset)
@@ -390,6 +403,11 @@ async def history_detail(request: Request, gen_id: int):
     user = await auth.get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
+    if not user["is_pro"]:
+        return templates.TemplateResponse(request, "upgrade.html", {
+            "user": user,
+            "has_stripe": bool(STRIPE_SECRET_KEY),
+        })
 
     gen = await asyncio.to_thread(db.db_get_generation_by_id, gen_id, user["id"])
     if not gen:

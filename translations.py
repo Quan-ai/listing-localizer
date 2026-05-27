@@ -947,6 +947,14 @@ STRINGS = {
         "ms": "Terlalu banyak cubaan log masuk. Sila tunggu 15 minit.",
         "fil": "Masyadong maraming pagtatangka sa pag-login. Mangyaring maghintay ng 15 minuto.",
     },
+    "err_signup_limit": {
+        "en": "Too many accounts registered from this network. Please try again tomorrow.",
+        "id": "Terlalu banyak akun terdaftar dari jaringan ini. Silakan coba lagi besok.",
+        "th": "ลงทะเบียนบัญชีจากเครือข่ายนี้มากเกินไป กรุณาลองอีกครั้งพรุ่งนี้",
+        "vi": "Quá nhiều tài khoản đã đăng ký từ mạng này. Vui lòng thử lại vào ngày mai.",
+        "ms": "Terlalu banyak akaun didaftarkan dari rangkaian ini. Sila cuba lagi esok.",
+        "fil": "Masyadong maraming account ang nakarehistro mula sa network na ito. Pakisubukang muli bukas.",
+    },
 }
 
 
